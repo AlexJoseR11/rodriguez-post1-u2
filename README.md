@@ -64,6 +64,30 @@ classDiagram
         +createHeaderFooter() ReportHeaderFooter
     }
 
+    class PdfReportBody {
+        +render(List~GradeRecord~ records) String
+    }
+    class PdfHeaderFooter {
+        +renderHeader(String institutionName) String
+        +renderFooter(int pageNumber) String
+    }
+
+    class ExcelReportBody {
+        +render(List~GradeRecord~ records) String
+    }
+    class ExcelHeaderFooter {
+        +renderHeader(String institutionName) String
+        +renderFooter(int pageNumber) String
+    }
+
+    class HtmlReportBody {
+        +render(List~GradeRecord~ records) String
+    }
+    class HtmlHeaderFooter {
+        +renderHeader(String institutionName) String
+        +renderFooter(int pageNumber) String
+    }
+
     ReportFormatFactory <|.. PdfReportFactory : implements
     ReportFormatFactory <|.. ExcelReportFactory : implements
     ReportFormatFactory <|.. HtmlReportFactory : implements
@@ -76,9 +100,18 @@ classDiagram
     ReportHeaderFooter <|.. ExcelHeaderFooter : implements
     ReportHeaderFooter <|.. HtmlHeaderFooter : implements
 
+    PdfReportFactory ..> PdfReportBody : creates
+    PdfReportFactory ..> PdfHeaderFooter : creates
+
+    ExcelReportFactory ..> ExcelReportBody : creates
+    ExcelReportFactory ..> ExcelHeaderFooter : creates
+
+    HtmlReportFactory ..> HtmlReportBody : creates
+    HtmlReportFactory ..> HtmlHeaderFooter : creates
+
     class ReportFactoryRegistry {
-        -Map~String, Supplier~ReportFormatFactory~~ REGISTRY$
-        +register(String format, Supplier~ReportFormatFactory~ factorySupplier)$ void
+        -Map~String, Supplier~ REGISTRY$
+        +register(String format, Supplier factorySupplier)$ void
         +resolve(String format)$ ReportFormatFactory
         +getAvailableFormats()$ Set~String~
     }
@@ -115,18 +148,19 @@ classDiagram
         -boolean includeLogo
         -boolean compress
         -int maxRowsPerPage
-        +outputPath(String) Builder
-        +pageSize(String) Builder
-        +orientation(String) Builder
-        +locale(Locale) Builder
-        +watermarkText(String) Builder
-        +includeLogo(boolean) Builder
-        +compress(boolean) Builder
-        +maxRowsPerPage(int) Builder
+        +outputPath(String outputPath) Builder
+        +pageSize(String pageSize) Builder
+        +orientation(String orientation) Builder
+        +locale(Locale locale) Builder
+        +watermarkText(String watermarkText) Builder
+        +includeLogo(boolean includeLogo) Builder
+        +compress(boolean compress) Builder
+        +maxRowsPerPage(int maxRowsPerPage) Builder
         +build() ExportConfig
     }
 
-    ExportConfig +-- Builder : Inner Static Class
+    ExportConfig *-- Builder : nested static builder
+    Builder ..> ExportConfig : builds
 
     class ReportExportService {
         +export(String format, List~GradeRecord~ records, String institutionName) String
@@ -134,8 +168,10 @@ classDiagram
     }
 
     ReportExportService ..> ReportFactoryRegistry : resolves factory
-    ReportExportService ..> ExportConfig : receives
-    ReportExportService ..> ReportFormatFactory : uses
+    ReportExportService ..> ExportConfig : uses config
+    ReportExportService ..> ReportFormatFactory : uses factory
+    ReportExportService ..> ReportBody : uses body
+    ReportExportService ..> ReportHeaderFooter : uses header-footer
 ```
 
 ---
